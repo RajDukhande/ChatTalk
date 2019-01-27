@@ -11,6 +11,7 @@
   "dependencies": {
     "express": "*",
     "nedb": "^1.8.0",
+    "push.js": "^1.0.9",
     "socket.io": "*"
   }
 }
