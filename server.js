@@ -37,9 +37,7 @@ io.sockets.on('connection', function (socket) {
     
         socket.on('room msg',function(data){
             console.log(data);
-            //console.log("room msg",roomname);
-          //  io.sockets.in("chatroom").emit('new pcmessage',{ msg: doc.msgs, user: doc.user1 });
-            //  io.sockets.in(roomname1).emit('chatroommsg',{msg:data,user:socket.username});
+          
               io.sockets.in(roomname2).emit('chatroommsg',{msg:data,user:socket.username});
         });
 
@@ -49,20 +47,19 @@ io.sockets.on('connection', function (socket) {
            
            roomname1 = socket.username+socket.testuser2;
            roomname2 = socket.testuser2+socket.username;
-          //console.log("outside roomroom",roomname);
+       
           socket.emit('chatroom',roomname1)
           socket.emit('chatroom',roomname2)
 
           socket.on("chatroom",function(room)
           {
               socket.join(room);
-              //console.log("room",roomname);
-           //   console.log("Inside room",room);
+            
           });
 
           pcchatsdb.find({}).exec(function(err,docs)
          {
-           // console.log("pc chats",docs);
+           
             var msgarr = [];
             var count = 0;
            
@@ -103,8 +100,7 @@ io.sockets.on('connection', function (socket) {
             });
             pcchatsdb.findOne({msgs:data},function(err,doc)
             {
-               // io.sockets.emit('new pcmessage',{ msg: doc.msgs, user: doc.user1 });
-                 // console.log('Found pcuser',doc.user1,doc.msgs);
+              
             });
 
       });
