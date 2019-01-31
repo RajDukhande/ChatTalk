@@ -12,6 +12,8 @@ connections = [];
 server.listen(process.env.PORT || 3000);
 console.log('Server running...');
 
+
+
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
@@ -23,25 +25,41 @@ app.get('/push.js', function (req, res) {
 io.sockets.on('connection', function (socket) {
     connections.push(socket);
     console.log('connected: %s sockets connected', connections.length);
-
+    var roomname;
 
     //for disconnect
     socket.on('disconnect', function (data) {
-        users.splice(users.indexOf(socket.username), 1);
+        users.splice(users.indexOf(data), 1);
         updateUsernames();
         connections.splice(connections.indexOf(socket), 1);
         console.log('Disconncted: %s sockets  connected', connections.length);
     });
-
-    // //for send message
     
+        socket.on('room msg',function(data){
+            console.log(data);
+            //console.log("room msg",roomname);
+          //  io.sockets.in("chatroom").emit('new pcmessage',{ msg: doc.msgs, user: doc.user1 });
+            //  io.sockets.in(roomname1).emit('chatroommsg',{msg:data,user:socket.username});
+              io.sockets.in(roomname2).emit('chatroommsg',{msg:data,user:socket.username});
+        });
 
       //get user2
       socket.on('get user2',function(data){
           socket.testuser2 = data;
-          //console.log("getuser2",socket.testuser2);
+           
+           roomname1 = socket.username+socket.testuser2;
+           roomname2 = socket.testuser2+socket.username;
+          //console.log("outside roomroom",roomname);
+          socket.emit('chatroom',roomname1)
+          socket.emit('chatroom',roomname2)
 
-         // pcchatsdb.findOne({user1:1},function(err,docs)
+          socket.on("chatroom",function(room)
+          {
+              socket.join(room);
+              //console.log("room",roomname);
+           //   console.log("Inside room",room);
+          });
+
           pcchatsdb.find({}).exec(function(err,docs)
          {
            // console.log("pc chats",docs);
@@ -50,6 +68,7 @@ io.sockets.on('connection', function (socket) {
            
                 for (var i = 0 ; i<docs.length ; i++)
                 {
+                    
                     if((docs[i].user1==socket.username && docs[i].user2==socket.testuser2) || (docs[i].user1==socket.testuser2 && docs[i].user2==socket.username))
                     {
                         if(count <= 9)
@@ -57,13 +76,17 @@ io.sockets.on('connection', function (socket) {
                             count++;
                             msgarr.push(docs[i].user1,docs[i].msgs,docs[i].user2);
                             io.sockets.emit('new allpcmessage', { msg: docs[i].msgs, user: docs[i].user1 });
+                            
                         }
                        
                     }
-                    
+                  
                 }
             
             console.log("pc chts",msgarr);
+           console.log("1",docs);
+           docs = "";
+           console.log("2",docs);
         });
       });
 
@@ -80,7 +103,7 @@ io.sockets.on('connection', function (socket) {
             });
             pcchatsdb.findOne({msgs:data},function(err,doc)
             {
-                io.sockets.emit('new pcmessage', { msg: doc.msgs, user: doc.user1 });
+               // io.sockets.emit('new pcmessage',{ msg: doc.msgs, user: doc.user1 });
                  // console.log('Found pcuser',doc.user1,doc.msgs);
             });
 
@@ -106,8 +129,7 @@ io.sockets.on('connection', function (socket) {
         });
         updateUsernames();
     });
-    
-    
+        
     //update online users
     function updateUsernames() {
         io.sockets.emit('get users', users);

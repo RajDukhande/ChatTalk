@@ -13,7 +13,7 @@
 		}
 	</style>
 </head>
-<body onbeforeunload="return false">
+<body onbeforeunload="return false" onkeydown="return(event.keyCode != 116)">
 	<div class="container">
         <div id="userFormArea" class="row">
             <div class="col-md-12">
@@ -28,7 +28,7 @@
                         <hr>
                             <div id="display">
                                 <form id="lgotuers">
-                                    <input type="Submit" class="btn btn-primary btn-danger" value="Logout" />
+                                    <input type="button" class="btn btn-primary btn-danger btnlgot" onclick="lgotuersbtn()" value="Logout" />
                                 </form>
                             </div>
             </div>
@@ -41,7 +41,7 @@
 				</div>
 			</div>
 			<div class="col-md-8">
-				<div class="chat" id="chat"></div>
+				<div class="chats" id="chat"></div>
 					<form id="messageForm">
 						<div class="form-group">
 							<label>Enter Message</label>
@@ -53,10 +53,27 @@
 			</div>
 		</div>
     </div>
-    <script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script >
 
-        $('#btnmsg').click(function(){
-			Push.create('You have new message on ChatTalk',{
+function destroyDiv()
+             {
+               $("#chat").empty();
+                alert("clear");
+                            }
+
+   var socket = io();
+
+socket.on("connect", function(){
+    var chatroom = "chatroom";
+    socket.emit('chatroom', chatroom);
+   
+});
+
+                
+
+$('#btnmsg').click(function(){
+			Push.create('You have one message',{
                 timeout: 3000,
             });
 		})
@@ -74,66 +91,74 @@
             var $online = $('#online');
             var $lgotuers = $('#lgotuers');
             var $display = $('#display');
+            var uname = "";
 
-            $lgotuers.submit(function(e){
+             var socket = io();
+
+             $lgotuers.submit(function(e){
                 socket.emit('disconnect',$username.val());
             });
-
+        
             //forsend message
             $messageForm.submit(function(e){
                 e.preventDefault();
                // socket.emit('send message',$message.val());
                 socket.emit('send pcmsg',$message.val());
+                socket.emit('room msg',$message.val());
                 $message.val(''); 
             });
-
-            
-            //receive message
-            socket.on('new message',function(data){
-                $chat.append('<div class="well"><b>'+data.user+'</b> :'+data.msg+'</div>');
-             
-            });
-
-            //receive pcmsg
-            socket.on('new pcmessage',function(data){
+                
+            socket.on('chatroommsg',function(data)
+            {
                 $chat.append('<div class="well"><b>'+data.user+'</b> :'+data.msg+'</div>');
             });
-
 
             //login
-            $userForm.submit(function(e){
+            $userForm.submit(function(e)
+            {    uname = $username.val();
                 e.preventDefault();
                 socket.emit('new user',$username.val(),function(data){
                     if(data)
                     {
-                       //  $display.append('<div class="well"><b>'+$username.val()+'</b></div>'); 
+         
                     }
                 });
                 $username.val(''); 
             });
             
+            
+
             $(document).on('click','.btnuser',function(){
-              // console.log("Inside button");
+             
+              
               var testName=$(this).closest('.usertr');
               
                 var testName2=$(testName).find('.thname');
                 var testName3=testName2[0].innerText;
                 var $testName3 = testName3;
-               // console.log("Table",testName3);
+              
                 socket.emit('get user2',testName3);
-
-                socket.on('new allpcmessage',function(data){
-                $chat.append('<div class="well"><b>'+data.user+'</b> :'+data.msg+'</div>');
                 
+                
+                var roomname1 = uname+testName3;
+                var roomname2 = testName3+uname;
+              
+                
+                socket.emit("chatroom",roomname1);
+                socket.emit("chatroom",roomname2);
+
+                socket.on('new allpcmessage',function(data)
+                {
+                $chat.append('<div class="well" id="myDiv"><b>'+data.user+'</b> :'+data.msg+'</div>');
+                });
             });
-     });
 
             //online user
             socket.on('get users',function(data){
                 var html = '';
                 for(var i = 0 ; i < data.length ; i++)
                 {
-                    html += '<tr class="usertr"><th class="thname">'+data[i]+'</th><td><form id="online"><input type="Button" id="myButton" class="btn btn-primary btnuser" value="Chat" /></form></td></tr>';
+                    html += '<tr class="usertr"><th class="thname">'+data[i]+'</th><td><form id="online"><input type="Button" id="myButton" class="btn btn-primary btnuser" onclick="destroyDiv()" value="Chat" /></form></td></tr>';
                    
                 }
                 $users.html(html);
